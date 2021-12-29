@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sufragio universal</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.22/"></script>
+    <!-- <script src="index.js" type="module"></script> -->
+
+    <style>
+        html,
+        body,
+        #divMap {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        #timeSlider {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            bottom: 20px;
+        }
+    </style>
+
+    <script type="application/javascript" id="yearSU">
+        // var yearSU = new Date(Year($feature.Suffrage));
+        // return yearSU;
+        return 'Hola'
+    </script>
+
+    <script type="module">
+        import Map from 'https://js.arcgis.com/4.22/@arcgis/core/Map.js'
+        import MapView from "https://js.arcgis.com/4.22/@arcgis/core/views/MapView.js";
+        import FeatureLayer from "https://js.arcgis.com/4.22/@arcgis/core/layers/FeatureLayer.js";
+        import Extent from "https://js.arcgis.com/4.22/@arcgis/core/geometry/Extent.js";
+        import TimeSlider from "https://js.arcgis.com/4.22/@arcgis/core/widgets/TimeSlider.js";
+        import esriConfig from "https://js.arcgis.com/4.22/@arcgis/core/config.js";
+
+        esriConfig.apiKey = "AAPK418e9df5895041d99065bd00d99c72f5NuaBMdnTtUNc0N2zn2CrO9sxJec54XGurgzwhaCeJRDUKa9-DgbLt-HkC529TwMm";
+
+        const map = new Map({
+            basemap: "arcgis-dark-gray" // Basemap layer service
+        });
+        const renderer = {
+            type: 'simple',
+            symbol: {
+                type: "simple-fill",
+                outline: { color: [165, 79, 176, 1] },
+                color: [212, 143, 216, 0.45]
+            }
+        };
+
+
+        const arcadeExpression = [
+            {
+                name: "yearS",
+                expression: document.getElementById("yearSU").text
+            }
+        ];
+
+        const suffrageLayer = new FeatureLayer({
+            url: 'https://services1.arcgis.com/YFraetVkEAF1lMag/ArcGIS/rest/services/Universal_suffrage/FeatureServer/0',
+            renderer: renderer,
+            popupTemplate: {
+                title: '{ADMIN}',
+                // content: arcadeExpression[0].expression //Date(Year(Now()),0,1)
+                content: '{YearSuffrage}'
+            }
+        });
+        map.add(suffrageLayer);
+
+
+
+        const globalExtent = new Extent({
+            "xmin": -21347430.933634788,
+            "ymin": -5841775.269330634,
+            "xmax": 16222897.209085055,
+            "ymax": 12493327.57948629,
+            "spatialReference": {
+                "wkid": 102100
+            }
+        });
+
+        const view = new MapView({
+            map: map,
+            extent: globalExtent,
+            container: "divMap" // Div element
+        });
+
+        const timeSlider = new TimeSlider({
+            container: "timeSlider",
+            view: view,
+            mode: "cumulative-from-start",
+            // timeVisible: true, // show the time stamps on the timeslider
+            // fullTimeExtent: {
+            //     start: 
+            // }
+        });
+        
+        let timeLayerView;
+        view.whenLayerView(suffrageLayer).then((layerView) => {
+            
+            
+            timeLayerView = layerView;
+            const fullTimeExtent = suffrageLayer.timeInfo.fullTimeExtent;
+            console.log(
+                {
+                    "fullTimeExtent": fullTimeExtent,
+                    // "end": end,
+                    "interval": suffrageLayer.timeInfo.interval
+                });
+
+
+            timeSlider.fullTimeExtent = {
+                end: new Date(2015,1,1),
+                start: new Date(1861,1,1)
+            };
+            timeSlider.timeExtent = {
+                start: null,
+                end: timeSlider.fullTimeExtent.start
+            };
+            timeSlider.stops = {
+                //   interval: suffrageLayer.timeInfo.interval
+                interval: {
+                    value: 2,
+                    unit: "years"
+                }
+            };
+        });
+
+        timeSlider.watch("timeExtent", (value) => {
+            // update layer view filter to reflect current timeExtent
+            timeLayerView.filter = {
+                timeExtent: value
+            };
+        });
+        //   1906 -2020
+    </script>
+</head>
+
+<body>
+    <div id="divMap"></div>
+    <div id="timeSlider"></div>
+
+</body>
+
+</html>
