@@ -9,16 +9,42 @@
 
     <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css">
     <script src="https://js.arcgis.com/4.22/"></script>
-    <!-- <script src="index.js" type="module"></script> -->
+    <script src="https://js.arcgis.com/calcite-components/1.0.0-beta.71/calcite.esm.js" type="module"></script>
+    <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/1.0.0-beta.71/calcite.css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/@arcgis/core/assets/esri/themes/light/main.css" />
+
 
     <style>
         html,
-        body,
-        #divMap {
+        body {
             padding: 0;
             margin: 0;
             height: 100%;
             width: 100%;
+            box-sizing: border-box;
+        }
+        #wrapperTitle {
+            background-color: #4c2882;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        #divMap {
+            width: 100%;
+            height: 80%;
+        }
+
+        #info {
+            margin-left: 20px;
+            cursor: pointer;
+        }
+
+        #extraInfo {
+            z-index: 2;
+            position: absolute;
+
         }
 
         #timeSlider {
@@ -29,17 +55,33 @@
         }
     </style>
 
-    <script type="application/javascript" id="yearSU">
-        // var yearSU = new Date(Year($feature.Suffrage));
-        // return yearSU;
-        return 'Hola'
-    </script>
+   
+</head>
 
+<body>
+    <header id="wrapperTitle">
+        <h1>Sufragio Universal</h1>
+        <calcite-icon icon="information" id="info" onclick="showNotice()"></calcite-icon>
+    </header>
+    <calcite-notice id="extraInfo">
+        <p slot="title">¿Qué es el <b>Sufragio Universal</b>?</p>
+        <p slot="message">El sufragio universal consiste en el derecho a voto de toda la población de un Estado, independientemente de su procedencia, raza, sexo, edad, creencias o condición social. La Declaración Universal de Derechos Humanos le dedica el <calcite-link href="https://www.un.org/es/about-us/universal-declaration-of-human-rights">Artículo 21</calcite-link> a este derecho que tanto ha costado conseguir.</p>
+    </calcite-notice>
+
+    <div id="divMap"></div>
+    <div id="timeSlider"></div>
+
+
+    <script>
+        const showNotice = () => {
+            let currentState = document.getElementById("extraInfo").active;
+            document.getElementById("extraInfo").active = !currentState;
+        }
+    </script>
     <script type="module">
         import Map from 'https://js.arcgis.com/4.22/@arcgis/core/Map.js'
         import MapView from "https://js.arcgis.com/4.22/@arcgis/core/views/MapView.js";
         import FeatureLayer from "https://js.arcgis.com/4.22/@arcgis/core/layers/FeatureLayer.js";
-        import Extent from "https://js.arcgis.com/4.22/@arcgis/core/geometry/Extent.js";
         import TimeSlider from "https://js.arcgis.com/4.22/@arcgis/core/widgets/TimeSlider.js";
         import esriConfig from "https://js.arcgis.com/4.22/@arcgis/core/config.js";
 
@@ -57,77 +99,43 @@
             }
         };
 
-
-        const arcadeExpression = [
-            {
-                name: "yearS",
-                expression: document.getElementById("yearSU").text
-            }
-        ];
-
         const suffrageLayer = new FeatureLayer({
             url: 'https://services1.arcgis.com/YFraetVkEAF1lMag/ArcGIS/rest/services/Universal_suffrage/FeatureServer/0',
             renderer: renderer,
             popupTemplate: {
                 title: '{ADMIN}',
-                // content: arcadeExpression[0].expression //Date(Year(Now()),0,1)
                 content: '{YearSuffrage}'
             }
         });
         map.add(suffrageLayer);
 
-
-
-        const globalExtent = new Extent({
-            "xmin": -21347430.933634788,
-            "ymin": -5841775.269330634,
-            "xmax": 16222897.209085055,
-            "ymax": 12493327.57948629,
-            "spatialReference": {
-                "wkid": 102100
-            }
-        });
-
         const view = new MapView({
             map: map,
-            extent: globalExtent,
-            container: "divMap" // Div element
+            container: "divMap",
+            center: [-40.765879,39.043719],
+            zoom: 2
         });
 
         const timeSlider = new TimeSlider({
             container: "timeSlider",
             view: view,
-            mode: "cumulative-from-start",
-            // timeVisible: true, // show the time stamps on the timeslider
-            // fullTimeExtent: {
-            //     start: 
-            // }
+            mode: "cumulative-from-start"
         });
         
         let timeLayerView;
         view.whenLayerView(suffrageLayer).then((layerView) => {
-            
-            
             timeLayerView = layerView;
             const fullTimeExtent = suffrageLayer.timeInfo.fullTimeExtent;
-            console.log(
-                {
-                    "fullTimeExtent": fullTimeExtent,
-                    // "end": end,
-                    "interval": suffrageLayer.timeInfo.interval
-                });
-
 
             timeSlider.fullTimeExtent = {
                 end: new Date(2015,1,1),
-                start: new Date(1861,1,1)
+                start: new Date(1879,1,1)
             };
             timeSlider.timeExtent = {
                 start: null,
                 end: timeSlider.fullTimeExtent.start
             };
             timeSlider.stops = {
-                //   interval: suffrageLayer.timeInfo.interval
                 interval: {
                     value: 2,
                     unit: "years"
@@ -136,19 +144,11 @@
         });
 
         timeSlider.watch("timeExtent", (value) => {
-            // update layer view filter to reflect current timeExtent
             timeLayerView.filter = {
                 timeExtent: value
             };
         });
-        //   1906 -2020
     </script>
-</head>
-
-<body>
-    <div id="divMap"></div>
-    <div id="timeSlider"></div>
-
 </body>
 
 </html>
